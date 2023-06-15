@@ -1,0 +1,215 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model address {
+  address_id     String           @id @default(uuid()) @db.VarChar(255)
+  country        String?          @db.VarChar(255)
+  house_number   String?          @db.VarChar(255)
+  postal_code    String?          @db.VarChar(255)
+  street         String?          @db.VarChar(255)
+  customer       customer[]
+  customer_order customer_order[]
+  person         person[]
+}
+
+model application_user {
+  user_id                        String                           @id @db.VarChar(255)
+  email                          String?                          @db.VarChar(255)
+  password                       String?                          @db.VarChar(255)
+  role                           String?                          @db.VarChar(255)
+  persoonsgegevens_person_id     String?                          @db.VarChar(255)
+  person                         person?                          @relation(fields: [persoonsgegevens_person_id], references: [person_id], onDelete: Restrict, onUpdate: Restrict, map: "FKeqrbua623q56fmuv3xj5w0ba8")
+  application_user_notifications application_user_notifications[]
+  winkel_wagen                   shopping_cart[]
+
+  @@index([persoonsgegevens_person_id], map: "FKeqrbua623q56fmuv3xj5w0ba8")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by the Prisma Client.
+model application_user_notifications {
+  application_user_user_id String           @db.VarChar(255)
+  notifications_id         String           @unique(map: "UK_sfvm96602brf5poqbqh17ityr") @db.VarChar(255)
+  notification             notification     @relation(fields: [notifications_id], references: [id], onUpdate: Restrict, map: "FKd295n2wddki6ieaq3ssiy49x9")
+  application_user         application_user @relation(fields: [application_user_user_id], references: [user_id], onUpdate: Restrict, map: "FKnqkjyfuhoqhx7f7qdl2sop1cy")
+
+  @@index([application_user_user_id], map: "FKnqkjyfuhoqhx7f7qdl2sop1cy")
+}
+
+model customer {
+  customer_id        String            @id @db.VarChar(255)
+  logo               Bytes?
+  name               String?           @db.VarChar(255)
+  phone_number       String?           @db.VarChar(255)
+  address_address_id String?           @db.VarChar(255)
+  address            address?          @relation(fields: [address_address_id], references: [address_id], onDelete: Restrict, onUpdate: Restrict, map: "FKafbydgg7qhry7gbujyvwp51ut")
+  customer_buyers    customer_buyers[]
+  customer_order     customer_order[]
+
+  @@index([address_address_id], map: "FKafbydgg7qhry7gbujyvwp51ut")
+}
+
+model customer_buyers {
+  customer_customer_id String   @db.VarChar(255)
+  buyers_person_id     String   @unique(map: "UK_tfmixhb8rcniklht64jb3hcd9") @db.VarChar(255)
+  customer             customer @relation(fields: [customer_customer_id], references: [customer_id], onUpdate: Restrict, map: "FK4lxjgwwx262sue4yy81jux534")
+  person               person   @relation(fields: [buyers_person_id], references: [person_id], onUpdate: Restrict, map: "FKlshqyrcfx68ex419y95dy9vaw")
+
+  @@index([customer_customer_id], map: "FK4lxjgwwx262sue4yy81jux534")
+}
+
+model customer_order {
+  order_id                    String                       @id @default(uuid()) @db.VarChar(255)
+  extra_validation_code       String?                      @db.VarChar(255)
+  order_date                  DateTime?                    @db.Date
+  status                      String?                      @db.VarChar(255)
+  track_trace_code            String?                      @db.VarChar(255)
+  customer_customer_id        String?                      @db.VarChar(255)
+  delivery_address_address_id String?                      @db.VarChar(255)
+  packaging_packaging_id      String?                      @db.VarChar(255)
+  purchaser_person_id         String?                      @db.VarChar(255)
+  transport_transport_id      String?                      @db.VarChar(255)
+  transport                   transport?                   @relation(fields: [transport_transport_id], references: [transport_id], onDelete: Restrict, onUpdate: Restrict, map: "FK7xeo5is9bha9yd1xurqbcrx7i")
+  person                      person?                      @relation(fields: [purchaser_person_id], references: [person_id], onDelete: Restrict, onUpdate: Restrict, map: "FK8unii1o1p0pqi3ys9qvofx37j")
+  customer                    customer?                    @relation(fields: [customer_customer_id], references: [customer_id], onDelete: Restrict, onUpdate: Restrict, map: "FKdbml7a9r45i4smr4cn7h67s3w")
+  address                     address?                     @relation(fields: [delivery_address_address_id], references: [address_id], onDelete: Restrict, onUpdate: Restrict, map: "FKku6bfq6jnb02666cotrcb0tcs")
+  packaging                   packaging?                   @relation(fields: [packaging_packaging_id], references: [packaging_id], onDelete: Restrict, onUpdate: Restrict, map: "FKoirnyki3l3w1m9e76lo12vth3")
+  customer_order_order_lines  customer_order_order_lines[]
+
+  @@index([transport_transport_id], map: "FK7xeo5is9bha9yd1xurqbcrx7i")
+  @@index([purchaser_person_id], map: "FK8unii1o1p0pqi3ys9qvofx37j")
+  @@index([customer_customer_id], map: "FKdbml7a9r45i4smr4cn7h67s3w")
+  @@index([delivery_address_address_id], map: "FKku6bfq6jnb02666cotrcb0tcs")
+  @@index([packaging_packaging_id], map: "FKoirnyki3l3w1m9e76lo12vth3")
+}
+
+model customer_order_order_lines {
+  customer_order_order_id String         @db.VarChar(255)
+  order_lines_line_id     String         @unique(map: "UK_kshu6g802ombeajtaoir9d32p") @db.VarChar(255)
+  customer_order          customer_order @relation(fields: [customer_order_order_id], references: [order_id], onUpdate: Restrict, map: "FK81uiak88cmgf1h5xf7mstro67")
+  order_line              order_line     @relation(fields: [order_lines_line_id], references: [line_id], onUpdate: Restrict, map: "FK90vy04v809ssjqh02lm43h0qj")
+
+  @@index([customer_order_order_id], map: "FK81uiak88cmgf1h5xf7mstro67")
+}
+
+model medewerker {
+  medewerker_id    String  @id @db.VarChar(255)
+  functie          String? @db.VarChar(255)
+  person_person_id String? @db.VarChar(255)
+  person           person? @relation(fields: [person_person_id], references: [person_id], onDelete: Restrict, onUpdate: Restrict, map: "FKtab6i553hm94t8hahqhb21sbn")
+
+  @@index([person_person_id], map: "FKtab6i553hm94t8hahqhb21sbn")
+}
+
+model notification {
+  id                             String                          @id @db.VarChar(255)
+  active                         Boolean?                        @default(true) @db.TinyInt
+  date_created                   DateTime?                       @db.Date
+  id_of_order_to_be_checked      String?                         @db.VarChar(255)
+  application_user_notifications application_user_notifications?
+}
+
+model order_line {
+  line_id                    String                      @id @default(uuid()) @db.VarChar(255)
+  quantity_ordered           Int?
+  unit_price_order_line      Float
+  product_product_id         String?                     @db.VarChar(255)
+  customer_order_order_lines customer_order_order_lines?
+  product                    product?                    @relation(fields: [product_product_id], references: [product_id], onDelete: Restrict, onUpdate: Restrict, map: "FKmk8y3rw2ybq7oty1qme297w9x")
+  winkel_wagen_order_lines   shopping_cart_order_lines?  
+
+  @@index([product_product_id], map: "FKmk8y3rw2ybq7oty1qme297w9x")
+}
+
+model packaging {
+  packaging_id   String           @id @db.VarChar(255)
+  active         Boolean?         @default(true)
+  height         Float
+  length         Float
+  packaging_name String?          @unique(map: "UK_4a3h0q2d80y68dv4j1ealfsbi") @db.VarChar(255)
+  price          Float
+  type           String?          @default("STANDARD") @db.VarChar(255)
+  width          Float
+  customer_order customer_order[]
+}
+
+model person {
+  person_id          String              @id @db.VarChar(255)
+  email              String?             @db.VarChar(255)
+  first_name         String?             @db.VarChar(255)
+  last_name          String?             @db.VarChar(255)
+  phone_number       String?             @db.VarChar(255)
+  address_address_id String?             @db.VarChar(255)
+  application_user   application_user[]
+  customer_buyers    customer_buyers?
+  customer_order     customer_order[]
+  medewerker         medewerker[]
+  address            address?            @relation(fields: [address_address_id], references: [address_id], onDelete: Restrict, onUpdate: Restrict, map: "FK33mh9lc1c2ywjouu9gnw5114b")
+  transport_contacts transport_contacts?
+
+  @@index([address_address_id], map: "FK33mh9lc1c2ywjouu9gnw5114b")
+}
+
+model product {
+  product_id             String       @id @db.VarChar(255)
+  description            String?      @db.VarChar(255)
+  expected_delivery_date DateTime?    @db.Date
+  name                   String?      @db.VarChar(255)
+  number_in_stock        Int
+  picture                Bytes?       @db.Blob
+  unit_price             Float
+  order_line             order_line[]
+}
+
+model track_and_trace_template {
+  track_and_trace_template_id String      @id @db.VarChar(255)
+  extra_verification          String?     @db.VarChar(255)
+  number_of_chars             Int
+  only_numbers                Boolean?    @default(false)
+  prefix                      String?     @db.VarChar(255)
+  transport                   transport[]
+}
+
+model transport {
+  transport_id                                         String                    @id @db.VarChar(255)
+  active                                               Boolean?                  @default(true)
+  transport_name                                       String?                   @unique(map: "UK_mbky9ve1xkerxbamc7v9mbeni") @db.VarChar(255)
+  track_and_trace_template_track_and_trace_template_id String?                   @db.VarChar(255)
+  customer_order                                       customer_order[]
+  track_and_trace_template                             track_and_trace_template? @relation(fields: [track_and_trace_template_track_and_trace_template_id], references: [track_and_trace_template_id], onDelete: Restrict, onUpdate: Restrict, map: "FKr719ldujv00o9tagymhs5n1gv")
+  transport_contacts                                   transport_contacts[]
+
+  @@index([track_and_trace_template_track_and_trace_template_id], map: "FKr719ldujv00o9tagymhs5n1gv")
+}
+
+model transport_contacts {
+  transport_transport_id String    @db.VarChar(255)
+  contacts_person_id     String    @unique(map: "UK_488ge6yjb134iho6be6yrif9h") @db.VarChar(255)
+  person                 person    @relation(fields: [contacts_person_id], references: [person_id], onUpdate: Restrict, map: "FK15rgtdtknluavsypvuwvbsl9r")
+  transport              transport @relation(fields: [transport_transport_id], references: [transport_id], onUpdate: Restrict, map: "FKjkm05rfbbo3oxbq33h0abq3p8")
+
+  @@index([transport_transport_id], map: "FKjkm05rfbbo3oxbq33h0abq3p8")
+}
+
+model shopping_cart {
+  shopping_cart_id          String                      @id @default(uuid()) @db.VarChar(255) @map(name: "winkel_wagen_id") 
+  application_user_user_id  String?                     @db.VarChar(255) @map(name: "application_user_user_id")
+  application_user          application_user?           @relation(fields: [application_user_user_id], references: [user_id], onDelete: Restrict, onUpdate: Restrict, map: "FK82viug4i4d4fiw539un769o2f")
+  shopping_cart_order_lines shopping_cart_order_lines[]   
+  @@map(name: "winkel_wagen")
+  @@index([application_user_user_id], map: "FK82viug4i4d4fiw539un769o2f")
+}
+
+model shopping_cart_order_lines {
+  shopping_cart_shopping_cart_id String        @db.VarChar(255) @map(name: "winkel_wagen_winkel_wagen_id") 
+  order_lines_line_id            String        @unique(map: "UK_r59a2hdj9u0sgt24lscsw87dc") @db.VarChar(255) @map(name: "order_lines_line_id")
+  shopping_cart                  shopping_cart @relation(fields: [shopping_cart_shopping_cart_id], references: [shopping_cart_id], onDelete: Cascade, onUpdate: Restrict, map: "FK8s6ijwrdv85j2gwqn4ihr48m0")
+  order_line                     order_line    @relation(fields: [order_lines_line_id], references: [line_id], onDelete: Cascade, onUpdate: Restrict, map: "FKitlughx0en6ko627gu3hw15ve")
+  @@map(name: "winkel_wagen_order_lines")
+  @@index([shopping_cart_shopping_cart_id], map: "FK8s6ijwrdv85j2gwqn4ihr48m0")
+}
